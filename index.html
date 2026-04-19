@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEUROLINK CORE | Biological Hardware Maintenance</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
+
+    :root {
+      --lime: #CCFF00;
+      --bg: #000000;
+      --card: #0a0a0a;
+      --border: #1e1e1e;
+      --border-bright: #333;
+      --text: #ffffff;
+      --danger: #ff4444;
+      --gold: #FFD700;
+      --silver: #C0C0C0;
+      --max-xp: 5000;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      line-height: 1.4;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #050505;
+      border-bottom: 2px solid var(--lime);
+      padding: 18px 20px 14px;
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--lime);
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      animation: flicker 8s infinite;
+    }
+
+    @keyframes flicker {
+      0%,95%,100% { opacity: 1; }
+      96% { opacity: 0.7; }
+      97% { opacity: 1; }
+      98% { opacity: 0.5; }
+      99% { opacity: 1; }
+    }
+
+    .logo-sub {
+      font-size: 0.58rem;
+      color: #444;
+      margin-top: 4px;
+      letter-spacing: 2px;
+    }
+
+    /* ── HUD STATS ── */
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #030303;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hud-item {
+      padding: 12px 18px;
+      border-right: 1px solid var(--border);
+    }
+
+    .hud-item:last-child { border-right: none; }
+
+    .hud-label {
+      font-size: 0.56rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      display: block;
+    }
+
+    .hud-value {
+      font-size: 1rem;
+      color: var(--lime);
+      display: block;
+      margin-top: 3px;
+      transition: color 0.5s;
+    }
+
+    /* ── XP PROGRESS BAR ── */
+    .xp-bar-wrap {
+      height: 3px;
+      background: #111;
+    }
+
+    .xp-bar {
+      height: 3px;
+      background: var(--lime);
+      width: 0%;
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 0 8px var(--lime);
+    }
+
+    /* ── GAUGE ── */
+    .gauge-section {
+      padding: 28px 20px 20px;
+      text-align: center;
+      background: #000;
+      position: relative;
+    }
+
+    .gauge-outer {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto;
+      border: 2px solid var(--border-bright);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .gauge-outer::before,
+    .gauge-outer::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--lime);
+    }
+
+    .gauge-outer::before { top: -5px; left: -5px; }
+    .gauge-outer::after  { bottom: -5px; right: -5px; }
+
+    .gauge-inner {
+      width: 78%;
+      height: 78%;
+      border: 1px solid var(--lime);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .gauge-label {
+      font-size: 0.54rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .gauge-pct {
+      font-size: 2rem;
+      color: var(--lime);
+      font-family: 'Orbitron', sans-serif;
+      transition: all 0.5s;
+    }
+
+    /* ── DAILY MISSION ── */
+    .daily-mission {
+      margin: 14px 18px;
+      border: 1px solid var(--lime);
+      padding: 16px;
+      background: rgba(204,255,0,0.04);
+      cursor: pointer;
+      user-select: none;
+      animation: border-pulse 2.5s infinite;
+      transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .daily-mission::after {
+      content: 'CLICK';
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      font-size: 0.54rem;
+      color: var(--lime);
+      opacity: 0.5;
+      letter-spacing: 2px;
+    }
+
+    .daily-mission:hover { background: rgba(204,255,0,0.09); }
+
+    .daily-mission.cooldown {
+      opacity: 0.45;
+      cursor: not-allowed;
+      animation: none;
+      border-color: #333;
+    }
+
+    .daily-mission.cooldown::after { content: 'COOLDOWN'; }
+
+    @keyframes border-pulse {
+      0%,100% { border-color: #222; }
+      50%      { border-color: var(--lime); }
+    }
+
+    .daily-badge {
+      font-size: 0.56rem;
+      color: var(--lime);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .daily-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .daily-desc {
+      font-size: 0.65rem;
+      color: #777;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      padding: 18px 18px 6px;
+      font-size: 0.68rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    /* ── EXERCISE GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      padding: 10px 18px 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
+      position: relative;
+    }
+
+    .card:hover:not(.locked) {
+      border-color: var(--lime);
+      background: #111;
+      transform: translateY(-2px);
+    }
+
+    .card:active:not(.locked) {
+      transform: translateY(0);
+    }
+
+    .card.locked {
+      opacity: 0.32;
+      cursor: not-allowed;
+      background: repeating-linear-gradient(
+        45deg,
+        #000 0px, #000 10px,
+        #060606 10px, #060606 20px
+      );
+    }
+
+    .card-lock-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.65rem;
+      color: var(--danger);
+    }
+
+    .card-type {
+      font-size: 0.52rem;
+      color: var(--lime);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: block;
+      text-transform: uppercase;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      margin-bottom: 10px;
+      height: 36px;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .card-xp {
+      font-size: 0.72rem;
+      color: var(--lime);
+      font-weight: bold;
+    }
+
+    .card-req {
+      font-size: 0.52rem;
+      color: var(--danger);
+      margin-top: 5px;
+    }
+
+    /* ── NOTIFICATION ── */
+    .notification {
+      margin: 0 18px 10px;
+      background: var(--lime);
+      color: #000;
+      padding: 16px 18px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      display: none;
+      border: 2px solid #fff;
+      animation: slide-in 0.25s ease-out;
+    }
+
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification .notif-tip {
+      font-size: 0.64rem;
+      font-weight: normal;
+      display: block;
+      margin-top: 5px;
+      color: #111;
+    }
+
+    /* ── RANK BADGE ── */
+    .rank-up-banner {
+      display: none;
+      margin: 0 18px 10px;
+      background: #000;
+      border: 2px solid var(--gold);
+      padding: 14px 18px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 3px;
+      animation: slide-in 0.3s ease-out;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.56rem;
+      color: #2a2a2a;
+      letter-spacing: 2px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .gauge-outer { width: 130px; height: 130px; }
+      .gauge-pct { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="logo">NEUROLINK CORE</h1>
+    <p class="logo-sub">PROTOCOL: OMS_HEALTH_VER_4.2 // BIOLOGICAL HARDWARE MAINTENANCE</p>
+  </header>
+
+  <div class="hud">
+    <div class="hud-item">
+      <span class="hud-label">Hardware Rank</span>
+      <span class="hud-value" id="rank-display">NEURO-BRONCE</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Total XP</span>
+      <span class="hud-value" id="xp-display">0000</span>
+    </div>
+  </div>
+
+  <div class="xp-bar-wrap">
+    <div class="xp-bar" id="xp-bar"></div>
+  </div>
+
+  <div class="gauge-section">
+    <div class="gauge-outer">
+      <div class="gauge-inner">
+        <span class="gauge-label">CPU Load</span>
+        <div class="gauge-pct" id="load-pct">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-mission" id="daily-zone" role="button" tabindex="0" aria-label="Misión del día: ganar 200 XP">
+    <span class="daily-badge">[ Misión del día: +25% XP ]</span>
+    <div class="daily-title">Sincronización de Salto</div>
+    <div class="daily-desc">Salto de comba virtual para calibrar sensores óseos.</div>
+  </div>
+
+  <div class="rank-up-banner" id="rank-banner">⬛ RANK UP DETECTED ⬛</div>
+  <div class="notification" id="notification">
+    <span id="notif-main"></span>
+    <span class="notif-tip" id="notif-tip"></span>
+  </div>
+
+  <div class="section-header">>> Módulos de Entrenamiento Disponibles</div>
+  <div class="grid" id="exercises-grid"></div>
+
+  <footer>
+    &copy; 2024 NEUROLINK CORE &nbsp;|&nbsp; NO INSTITUTION DETECTED &nbsp;|&nbsp; UNLICENSED_COPY_v4.2
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var MAX_XP = 5000;
+
+      var RANKS = [
+        { min: 4000, name: 'NEURO-ORO',    color: '#FFD700' },
+        { min: 1000, name: 'NEURO-PLATA',  color: '#C0C0C0' },
+        { min: 0,    name: 'NEURO-BRONCE', color: '#CCFF00' }
+      ];
+
+      var EXERCISES = [
+        { id: 1, name: 'Salto Sináptico',    type: 'ÓSEO (OMS)', xp: 100, minXP: 0    },
+        { id: 2, name: 'Sprint Dopamina',    type: 'AERÓBICO',   xp: 120, minXP: 0    },
+        { id: 3, name: 'Salto de Frecuencia',type: 'CARDIO',     xp: 110, minXP: 0    },
+        { id: 4, name: 'Empuje Neumático',   type: 'FUERZA',     xp: 150, minXP: 500  },
+        { id: 5, name: 'Pistones Squat',     type: 'FUERZA',     xp: 150, minXP: 500  },
+        { id: 6, name: 'Escalador de Datos', type: 'AERÓBICO',   xp: 180, minXP: 1000 },
+        { id: 7, name: 'Burpee Reboot',      type: 'FULL BODY',  xp: 300, minXP: 2000 },
+        { id: 8, name: 'Reflejo Matrix',     type: 'AGILIDAD',   xp: 450, minXP: 4000 }
+      ];
+
+      var TIPS = [
+        'Boost de oxígeno detectado en el hipocampo.',
+        'Cortisol reducido. El sistema está en equilibrio.',
+        'Actualizando densidad ósea. Integridad al 100%.',
+        'Hardware optimizado. Lag mental eliminado.',
+        'Neurotransmisores estabilizados. Rendimiento +18%.',
+        'Serotonina en niveles óptimos. Sistema operativo estable.'
+      ];
+
+      var state = {
+        xp: 0,
+        prevRankName: 'NEURO-BRONCE',
+        dailyCooldown: false,
+        notifTimer: null,
+        bannerTimer: null
+      };
+
+      /* ── DOM REFS ── */
+      var elRank     = document.getElementById('rank-display');
+      var elXP       = document.getElementById('xp-display');
+      var elLoad     = document.getElementById('load-pct');
+      var elBar      = document.getElementById('xp-bar');
+      var elGrid     = document.getElementById('exercises-grid');
+      var elNotif    = document.getElementById('notification');
+      var elNotifM   = document.getElementById('notif-main');
+      var elNotifT   = document.getElementById('notif-tip');
+      var elBanner   = document.getElementById('rank-banner');
+      var elDaily    = document.getElementById('daily-zone');
+
+      /* ── HELPERS ── */
+      function getRank(xp) {
+        for (var i = 0; i < RANKS.length; i++) {
+          if (xp >= RANKS[i].min) return RANKS[i];
+        }
+        return RANKS[RANKS.length - 1];
+      }
+
+      function randomTip() {
+        return TIPS[Math.floor(Math.random() * TIPS.length)];
+      }
+
+      /* ── UPDATE STATS ── */
+      function updateStats() {
+        var rank = getRank(state.xp);
+
+        // Detect rank up
+        if (rank.name !== state.prevRankName) {
+          showRankBanner('RANK UP: ' + rank.name);
+          state.prevRankName = rank.name;
+        }
+
+        elRank.textContent = rank.name;
+        elRank.style.color = rank.color;
+
+        elXP.textContent = String(state.xp).padStart(4, '0');
+
+        var pct = Math.min(100, Math.round((state.xp / MAX_XP) * 100));
+        elLoad.textContent = pct + '%';
+        elBar.style.width  = pct + '%';
+
+        // Change gauge color when maxed
+        if (state.xp >= MAX_XP) {
+          elLoad.style.color = '#FFD700';
+          elBar.style.background = '#FFD700';
+          elBar.style.boxShadow = '0 0 8px #FFD700';
+        }
+      }
+
+      /* ── RENDER GRID ── */
+      function renderGrid() {
+        elGrid.innerHTML = '';
+        EXERCISES.forEach(function (ex) {
+          var locked = state.xp < ex.minXP;
+          var card = document.createElement('div');
+          card.className = 'card' + (locked ? ' locked' : '');
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', locked ? '-1' : '0');
+          card.setAttribute('aria-label', ex.name + ' — ' + ex.xp + ' XP' + (locked ? ' (bloqueado, requiere ' + ex.minXP + ' XP)' : ''));
+          card.innerHTML =
+            '<span class="card-type">' + ex.type + '</span>' +
+            '<div class="card-title">' + ex.name + '</div>' +
+            '<div class="card-xp">+' + ex.xp + ' XP</div>' +
+            (locked
+              ? '<div class="card-req">REQ: ' + ex.minXP + ' XP</div><span class="card-lock-icon">[X]</span>'
+              : '');
+
+          if (!locked) {
+            card.addEventListener('click', function () { gainXP(ex.xp); });
+            card.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); gainXP(ex.xp); }
+            });
+          } else {
+            card.addEventListener('click', function () {
+              showNotification('ACCESO DENEGADO', 'Hardware insuficiente. Sigue entrenando. REQ: ' + ex.minXP + ' XP');
+            });
+          }
+
+          elGrid.appendChild(card);
+        });
+      }
+
+      /* ── GAIN XP ── */
+      function gainXP(points) {
+        state.xp += points;
+        updateStats();
+        renderGrid();
+        showNotification('MANTENIMIENTO EXITOSO — +' + points + ' XP', randomTip());
+      }
+
+      /* ── NOTIFICATIONS ── */
+      function showNotification(main, tip) {
+        elNotifM.textContent = main;
+        elNotifT.textContent = tip || '';
+        elNotif.style.display = 'block';
+        clearTimeout(state.notifTimer);
+        state.notifTimer = setTimeout(function () {
+          elNotif.style.display = 'none';
+        }, 3500);
+      }
+
+      function showRankBanner(text) {
+        elBanner.textContent = text;
+        elBanner.style.display = 'block';
+        clearTimeout(state.bannerTimer);
+        state.bannerTimer = setTimeout(function () {
+          elBanner.style.display = 'none';
+        }, 4000);
+      }
+
+      /* ── DAILY MISSION ── */
+      function handleDaily() {
+        if (state.dailyCooldown) return;
+        state.dailyCooldown = true;
+        elDaily.classList.add('cooldown');
+        gainXP(200);
+        setTimeout(function () {
+          state.dailyCooldown = false;
+          elDaily.classList.remove('cooldown');
+        }, 3000);
+      }
+
+      elDaily.addEventListener('click', handleDaily);
+      elDaily.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDaily(); }
+      });
+
+      /* ── INIT ── */
+      updateStats();
+      renderGrid();
+
+    })();
+  </script>
+
+</body>
+</html>
