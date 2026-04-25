@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NEUROLINK CORE | Biological Hardware Maintenance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   NEUROLINK CORE v2 — CSS
+   Palette: Black + Cyan (#00E5FF accent)
+═══════════════════════════════════════════ */
+:root {
+  --cyan: #00E5FF;
+  --cyan-dim: #00b8cc;
+  --cyan-glow: rgba(0,229,255,0.25);
+  --cyan-faint: rgba(0,229,255,0.07);
+  --bg: #000000;
+  --bg2: #050508;
+  --bg3: #0a0a0f;
+  --border: #0d1a1f;
+  --border2: #1a2f35;
+  --text: #e0f7fa;
+  --text-dim: #5a7a80;
+  --danger: #FF3D57;
+  --gold: #FFD700;
+  --silver: #C0C0C0;
+  --bronze: #CD7F32;
+  --success: #00FF88;
+  --font-title: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-mono);
+  line-height:1.4;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;
+  z-index:9000;
+}
+
+/* ── SCREENS ── */
+.screen { display:none; min-height:100vh; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ── LOADING SCREEN ── */
+#screen-loading {
+  align-items:center; justify-content:center;
+  background:var(--bg);
+  position:fixed; inset:0; z-index:8000;
+}
+.boot-logo {
+  font-family:var(--font-title);
+  font-size:clamp(2rem,8vw,4rem);
+  color:var(--cyan);
+  letter-spacing:8px;
+  text-shadow:0 0 20px var(--cyan),0 0 60px var(--cyan-glow);
+  animation:boot-flicker 0.1s steps(1) infinite;
+}
+@keyframes boot-flicker {
+  0%,90%{opacity:1} 91%{opacity:0.6} 95%{opacity:1} 97%{opacity:0.4} 100%{opacity:1}
+}
+.boot-bar-wrap { width:260px; height:3px; background:#111; margin-top:30px; }
+.boot-bar { height:3px; background:var(--cyan); width:0%; box-shadow:0 0 8px var(--cyan); animation:boot-load 2.2s ease-out forwards; }
+@keyframes boot-load { to{width:100%} }
+.boot-text { font-size:0.6rem; color:var(--text-dim); margin-top:12px; letter-spacing:3px; }
+
+/* ── AUTH SCREEN ── */
+#screen-auth {
+  align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center,#030a0f 0%,#000 70%);
+  padding:20px;
+  min-height:100vh;
+}
+.auth-box {
+  width:100%; max-width:420px;
+  border:1px solid var(--border2);
+  background:var(--bg2);
+  padding:32px 28px;
+  position:relative;
+}
+.auth-box::before,.auth-box::after {
+  content:'';position:absolute;width:12px;height:12px;background:var(--cyan);
+}
+.auth-box::before{top:-2px;left:-2px;}
+.auth-box::after{bottom:-2px;right:-2px;}
+.auth-title {
+  font-family:var(--font-title);
+  font-size:clamp(1.6rem,5vw,2.2rem);
+  color:var(--cyan);
+  letter-spacing:6px;
+  text-shadow:0 0 15px var(--cyan);
+  margin-bottom:6px;
+}
+.auth-sub { font-size:0.6rem; color:var(--text-dim); letter-spacing:2px; margin-bottom:28px; }
+.auth-tabs { display:flex; margin-bottom:24px; border-bottom:1px solid var(--border2); }
+.auth-tab {
+  flex:1; padding:10px; text-align:center;
+  font-family:var(--font-mono); font-size:0.7rem;
+  color:var(--text-dim); cursor:pointer;
+  letter-spacing:2px; text-transform:uppercase;
+  border:none; background:transparent;
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+  transition:color 0.2s,border-color 0.2s;
+}
+.auth-tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:0.58rem; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+.field input, .field select {
+  width:100%; padding:10px 12px;
+  background:#0a0a12; border:1px solid var(--border2);
+  color:var(--text); font-family:var(--font-mono); font-size:0.8rem;
+  outline:none; transition:border-color 0.2s,box-shadow 0.2s;
+  -webkit-appearance:none;
+}
+.field input:focus,.field select:focus {
+  border-color:var(--cyan);
+  box-shadow:0 0 0 1px var(--cyan-glow);
+}
+.field select option { background:#0a0a12; }
+.btn-primary {
+  width:100%; padding:14px;
+  background:transparent; border:1px solid var(--cyan);
+  color:var(--cyan); font-family:var(--font-mono);
+  font-size:0.8rem; letter-spacing:3px; text-transform:uppercase;
+  cursor:pointer; transition:background 0.2s,box-shadow 0.2s;
+  margin-top:8px;
+}
+.btn-primary:hover { background:var(--cyan-faint); box-shadow:0 0 12px var(--cyan-glow); }
+.auth-error { font-size:0.65rem; color:var(--danger); margin-top:10px; min-height:16px; text-align:center; }
+
+/* ── MAIN APP ── */
+#screen-app { flex-direction:column; }
+
+/* HEADER */
+.app-header {
+  position:sticky; top:0; z-index:200;
+  background:#000;
+  border-bottom:2px solid var(--cyan);
+  padding:14px 18px 12px;
+  transition:all 0.5s;
+}
+.app-header.rank-gold { border-bottom-color:var(--gold); }
+.app-header.rank-silver { border-bottom-color:var(--silver); }
+
+.header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.app-logo {
+  font-family:var(--font-title);
+  font-size:clamp(1.1rem,4vw,1.6rem);
+  color:var(--cyan);
+  letter-spacing:5px;
+  text-shadow:0 0 12px var(--cyan),0 0 30px var(--cyan-glow);
+  text-transform:uppercase;
+  line-height:1;
+}
+.app-header.rank-gold .app-logo { color:var(--gold); text-shadow:0 0 12px var(--gold),0 0 30px rgba(255,215,0,0.3); }
+.app-header.rank-silver .app-logo { color:var(--silver); text-shadow:0 0 12px var(--silver); }
+
+.header-user { text-align:right; }
+.header-username { font-size:0.7rem; color:var(--cyan); letter-spacing:1px; }
+.header-streak { font-size:0.58rem; color:#ff8c00; margin-top:2px; }
+.header-streak.bonus { color:#FFD700; }
+
+.hud { display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:10px; }
+.hud-item { padding:6px 0; }
+.hud-label { font-size:0.52rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; display:block; }
+.hud-value { font-size:0.9rem; color:var(--cyan); display:block; margin-top:2px; transition:color 0.5s; }
+.hud-value.gold { color:var(--gold); }
+.hud-value.silver { color:var(--silver); }
+
+.xp-bar-wrap { height:3px; background:#0a0a0a; margin-top:8px; }
+.xp-bar { height:3px; background:var(--cyan); width:0%; transition:width 0.7s cubic-bezier(.22,1,.36,1); box-shadow:0 0 6px var(--cyan); }
+.xp-bar.gold { background:var(--gold); box-shadow:0 0 6px var(--gold); }
+
+/* DAILY LIMIT BANNER */
+.daily-limit-banner {
+  background:rgba(255,61,87,0.12); border:1px solid var(--danger);
+  margin:12px 16px 0; padding:10px 14px;
+  font-size:0.65rem; color:var(--danger); display:none; letter-spacing:1px;
+}
+
+/* DAILY MISSION */
+.daily-zone {
+  margin:14px 16px 0;
+  border:1px solid var(--cyan);
+  padding:16px; background:var(--cyan-faint);
+  cursor:pointer; user-select:none;
+  animation:border-pulse 3s infinite;
+  transition:background 0.2s, transform 0.2s;
+  position:relative;
+}
+.daily-zone::after { content:'TAP'; position:absolute; right:14px; bottom:12px; font-size:0.5rem; color:var(--cyan); opacity:0.5; letter-spacing:2px; }
+.daily-zone:hover,.daily-zone.touch-zoom { transform:scale(1.02); background:rgba(0,229,255,0.1); }
+.daily-zone.cooldown { opacity:0.4; cursor:not-allowed; animation:none; border-color:var(--border2); transform:none !important; }
+.daily-zone.cooldown::after { content:'COOLDOWN'; }
+@keyframes border-pulse { 0%,100%{border-color:#1a3a40} 50%{border-color:var(--cyan)} }
+.daily-badge { font-size:0.55rem; color:var(--cyan); letter-spacing:2px; display:block; margin-bottom:5px; }
+.daily-title { font-family:var(--font-title); font-size:1rem; color:#fff; margin-bottom:4px; }
+.daily-desc { font-size:0.65rem; color:#7a9fa5; }
+.daily-day { font-size:0.5rem; color:var(--text-dim); margin-top:6px; letter-spacing:1px; }
+
+/* SECTION HEADER */
+.section-hdr {
+  padding:18px 16px 6px;
+  font-size:0.65rem; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:3px;
+}
+
+/* EXERCISES GRID */
+.ex-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:10px; padding:8px 16px 24px;
+}
+.ex-card {
+  background:var(--bg3); border:1px solid var(--border);
+  padding:14px; cursor:pointer;
+  transition:border-color 0.2s,background 0.2s,transform 0.25s,box-shadow 0.25s;
+  position:relative; overflow:hidden;
+}
+.ex-card::before {
+  content:''; position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:var(--cyan); transform:scaleX(0);
+  transform-origin:left; transition:transform 0.3s;
+}
+.ex-card:hover:not(.locked),.ex-card.touch-zoom:not(.locked) {
+  border-color:var(--cyan); background:#0a1215;
+  transform:scale(1.04); box-shadow:0 4px 24px var(--cyan-glow);
+}
+.ex-card:hover:not(.locked)::before,.ex-card.touch-zoom:not(.locked)::before { transform:scaleX(1); }
+.ex-card.locked {
+  opacity:0.3; cursor:not-allowed;
+  background:repeating-linear-gradient(45deg,#000 0 10px,#060608 10px 20px);
+}
+.ex-card.done-today { opacity:0.5; cursor:not-allowed; border-color:#1a2a1a; }
+.ex-card.done-today::after { content:'✓ DONE'; position:absolute; top:8px; right:8px; font-size:0.5rem; color:var(--success); }
+.card-type { font-size:0.5rem; color:var(--cyan); letter-spacing:1px; display:block; margin-bottom:7px; text-transform:uppercase; }
+.card-name { font-size:0.82rem; height:36px; overflow:hidden; margin-bottom:9px; color:#fff; line-height:1.3; }
+.card-xp { font-size:0.7rem; color:var(--cyan); }
+.card-req { font-size:0.5rem; color:var(--danger); margin-top:4px; }
+
+/* NOTIFICATION TOAST */
+.toast {
+  margin:8px 16px 0;
+  padding:14px 16px;
+  border:1px solid #fff; font-size:0.78rem;
+  font-weight:bold; display:none;
+  animation:slide-up 0.25s ease-out;
+}
+.toast.success { background:var(--cyan); color:#000; }
+.toast.error { background:var(--danger); color:#fff; }
+.toast.info { background:#000; color:var(--cyan); border-color:var(--cyan); }
+.toast-tip { font-size:0.62rem; font-weight:normal; display:block; margin-top:4px; }
+@keyframes slide-up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* RANK UP BANNER */
+.rankup-banner {
+  display:none; margin:8px 16px 0;
+  border:2px solid var(--gold); background:#0a0800;
+  padding:14px 16px; text-align:center;
+  font-family:var(--font-title); color:var(--gold);
+  font-size:0.9rem; letter-spacing:4px;
+  animation:rankup-anim 0.5s ease-out;
+}
+@keyframes rankup-anim {
+  0%{transform:scale(0.9);opacity:0} 60%{transform:scale(1.03)} 100%{transform:scale(1);opacity:1}
+}
+.share-btn {
+  display:inline-block; margin-top:10px;
+  padding:8px 18px; border:1px solid var(--gold);
+  background:transparent; color:var(--gold);
+  font-family:var(--font-mono); font-size:0.65rem;
+  letter-spacing:2px; cursor:pointer;
+  transition:background 0.2s;
+}
+.share-btn:hover { background:rgba(255,215,0,0.1); }
+
+/* SHARE MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.92); z-index:5000;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.active { display:flex; }
+.modal-box {
+  width:100%; max-width:380px;
+  background:var(--bg2); border:1px solid var(--border2);
+  padding:24px; position:relative;
+}
+.modal-title {
+  font-family:var(--font-title); color:var(--cyan);
+  font-size:1.1rem; letter-spacing:4px; margin-bottom:16px;
+}
+.modal-close {
+  position:absolute; top:12px; right:14px;
+  background:none; border:none; color:var(--text-dim);
+  font-size:1.2rem; cursor:pointer;
+}
+.share-canvas { display:block; width:100%; border:1px solid var(--border2); margin-bottom:16px; }
+.share-links { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.share-link {
+  padding:10px; border:1px solid var(--border2);
+  background:var(--bg3); text-align:center;
+  font-size:0.65rem; letter-spacing:1px; cursor:pointer;
+  transition:border-color 0.2s; color:var(--text);
+  text-decoration:none; display:block;
+}
+.share-link:hover { border-color:var(--cyan); color:var(--cyan); }
+.share-download {
+  width:100%; padding:12px; margin-top:8px;
+  border:1px solid var(--cyan); background:transparent;
+  color:var(--cyan); font-family:var(--font-mono);
+  font-size:0.72rem; letter-spacing:2px; cursor:pointer;
+  transition:background 0.2s;
+}
+.share-download:hover { background:var(--cyan-faint); }
+
+/* ── EXERCISE DETAIL SCREEN ── */
+#screen-exercise {
+  flex-direction:column;
+  background:var(--bg);
+}
+.ex-header {
+  padding:16px 18px 14px;
+  border-bottom:1px solid var(--border2);
+  background:#000; position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; gap:14px;
+}
+.back-btn {
+  background:none; border:1px solid var(--border2);
+  color:var(--cyan); padding:8px 12px;
+  font-family:var(--font-mono); font-size:0.65rem;
+  cursor:pointer; letter-spacing:2px; transition:border-color 0.2s;
+  white-space:nowrap;
+}
+.back-btn:hover { border-color:var(--cyan); }
+.ex-detail-title {
+  font-family:var(--font-title); color:var(--cyan);
+  font-size:clamp(1rem,4vw,1.4rem); letter-spacing:3px;
+  text-shadow:0 0 8px var(--cyan-glow);
+}
+.ex-detail-type { font-size:0.58rem; color:var(--text-dim); letter-spacing:2px; margin-top:2px; }
+
+.ex-content { padding:20px 18px; flex:1; }
+
+/* Technique block */
+.technique-block {
+  border:1px solid var(--border2); padding:18px;
+  background:var(--bg2); margin-bottom:20px; position:relative;
+}
+.technique-block::before {
+  content:'TÉCNICA'; position:absolute; top:-8px; left:14px;
+  background:var(--bg2); padding:0 8px;
+  font-size:0.55rem; color:var(--cyan); letter-spacing:3px;
+}
+.technique-text { font-size:0.72rem; line-height:1.8; color:#a0c4c8; }
+.technique-steps { list-style:none; margin-top:10px; }
+.technique-steps li {
+  font-size:0.68rem; color:#a0c4c8; padding:4px 0;
+  padding-left:16px; position:relative; line-height:1.6;
+}
+.technique-steps li::before { content:'▸'; position:absolute; left:0; color:var(--cyan); }
+
+/* Timer block */
+.timer-block {
+  border:1px solid var(--border2); padding:20px;
+  background:var(--bg2); margin-bottom:20px; text-align:center;
+  position:relative;
+}
+.timer-block::before {
+  content:'TEMPORIZADOR'; position:absolute; top:-8px; left:14px;
+  background:var(--bg2); padding:0 8px;
+  font-size:0.55rem; color:var(--cyan); letter-spacing:3px;
+}
+.timer-display {
+  font-family:var(--font-title); font-size:clamp(3rem,12vw,5rem);
+  color:var(--cyan); letter-spacing:4px;
+  text-shadow:0 0 20px var(--cyan),0 0 40px var(--cyan-glow);
+  transition:color 0.3s,text-shadow 0.3s;
+  line-height:1;
+}
+.timer-display.warning { color:#ff8c00; text-shadow:0 0 20px rgba(255,140,0,0.6); }
+.timer-display.danger { color:var(--danger); text-shadow:0 0 20px rgba(255,61,87,0.6); animation:pulse-danger 0.5s infinite; }
+@keyframes pulse-danger { 0%,100%{opacity:1} 50%{opacity:0.6} }
+.timer-label { font-size:0.58rem; color:var(--text-dim); letter-spacing:2px; margin-top:6px; }
+.timer-sets { font-size:0.7rem; color:var(--text-dim); margin-top:8px; }
+.timer-btns { display:flex; gap:10px; margin-top:16px; justify-content:center; flex-wrap:wrap; }
+.timer-btn {
+  padding:12px 22px; border:1px solid var(--cyan);
+  background:transparent; color:var(--cyan);
+  font-family:var(--font-mono); font-size:0.72rem; letter-spacing:2px;
+  cursor:pointer; transition:background 0.2s, box-shadow 0.2s;
+  min-width:120px;
+}
+.timer-btn:hover { background:var(--cyan-faint); box-shadow:0 0 10px var(--cyan-glow); }
+.timer-btn.danger-btn { border-color:var(--danger); color:var(--danger); }
+.timer-btn.danger-btn:hover { background:rgba(255,61,87,0.1); }
+
+/* Rep counter */
+.rep-block {
+  border:1px solid var(--border2); padding:20px;
+  background:var(--bg2); margin-bottom:20px; text-align:center;
+  position:relative;
+}
+.rep-block::before {
+  content:'REPETICIONES'; position:absolute; top:-8px; left:14px;
+  background:var(--bg2); padding:0 8px;
+  font-size:0.55rem; color:var(--cyan); letter-spacing:3px;
+}
+.rep-display {
+  font-family:var(--font-title); font-size:clamp(3rem,12vw,5rem);
+  color:var(--cyan); letter-spacing:4px;
+  text-shadow:0 0 20px var(--cyan); line-height:1;
+}
+.rep-target { font-size:0.65rem; color:var(--text-dim); margin:6px 0 14px; }
+.rep-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.rep-btn {
+  padding:14px 28px; border:1px solid var(--cyan);
+  background:transparent; color:var(--cyan);
+  font-family:var(--font-title); font-size:1.5rem;
+  cursor:pointer; transition:background 0.15s;
+}
+.rep-btn:hover { background:var(--cyan-faint); }
+
+/* Camera AI block */
+.camera-block {
+  border:1px solid var(--border2); padding:18px;
+  background:var(--bg2); margin-bottom:20px; position:relative;
+}
+.camera-block::before {
+  content:'AI REP COUNTER (OPCIONAL)'; position:absolute; top:-8px; left:14px;
+  background:var(--bg2); padding:0 8px;
+  font-size:0.55rem; color:var(--cyan); letter-spacing:3px;
+}
+.camera-desc { font-size:0.65rem; color:#7a9fa5; margin-bottom:14px; line-height:1.7; }
+#camera-feed { width:100%; max-height:260px; object-fit:cover; display:none; border:1px solid var(--border2); }
+.camera-status { font-size:0.65rem; color:var(--text-dim); margin-top:8px; min-height:18px; }
+.camera-rep-count { font-family:var(--font-title); font-size:2rem; color:var(--success); margin-top:6px; display:none; }
+.btn-camera {
+  padding:10px 18px; border:1px solid var(--border2);
+  background:transparent; color:var(--text);
+  font-family:var(--font-mono); font-size:0.68rem; letter-spacing:2px;
+  cursor:pointer; margin-right:8px; margin-top:8px;
+  transition:border-color 0.2s,color 0.2s;
+}
+.btn-camera:hover { border-color:var(--cyan); color:var(--cyan); }
+.btn-camera.active { border-color:var(--success); color:var(--success); }
+
+/* Complete button */
+.complete-btn {
+  width:100%; padding:16px; margin-bottom:30px;
+  border:2px solid var(--cyan); background:var(--cyan-faint);
+  color:var(--cyan); font-family:var(--font-title);
+  font-size:1rem; letter-spacing:4px; text-transform:uppercase;
+  cursor:pointer; transition:background 0.2s,box-shadow 0.2s;
+}
+.complete-btn:hover { background:rgba(0,229,255,0.15); box-shadow:0 0 20px var(--cyan-glow); }
+.complete-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* FOOTER */
+.app-footer {
+  text-align:center; padding:28px 16px;
+  border-top:1px solid var(--border);
+  font-size:0.6rem; color:#2a4a50; letter-spacing:1px;
+}
+.footer-creators { margin-bottom:10px; }
+.footer-creators a {
+  color:var(--cyan-dim); text-decoration:none;
+  margin:0 8px; letter-spacing:1px;
+  transition:color 0.2s;
+}
+.footer-creators a:hover { color:var(--cyan); }
+.footer-ig-icon { margin-right:4px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:420px){
+  .ex-grid{grid-template-columns:1fr 1fr;}
+  .hud{grid-template-columns:1fr 1fr;}
+}
+@media(min-width:768px){
+  .auth-box{padding:40px 36px;}
+  .ex-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
+}
+
+/* ── UTILITY ── */
+.hidden{display:none!important;}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════
+     LOADING SCREEN
+══════════════════════════ -->
+<div id="screen-loading" class="screen active">
+  <div class="boot-logo">NEUROLINK</div>
+  <div class="boot-bar-wrap"><div class="boot-bar"></div></div>
+  <div class="boot-text">INITIALIZING BIOLOGICAL HARDWARE...</div>
+</div>
+
+<!-- ══════════════════════════
+     AUTH SCREEN
+══════════════════════════ -->
+<div id="screen-auth" class="screen">
+  <div class="auth-box">
+    <div class="auth-title">NEUROLINK</div>
+    <div class="auth-sub">BIOLOGICAL HARDWARE MAINTENANCE PROTOCOL</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">LOGIN</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">REGISTRAR</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <div class="field"><label>Nombre de usuario</label><input type="text" id="login-user" placeholder="usuario" autocomplete="username"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn-primary" onclick="doLogin()">ACCEDER</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="form-register" class="hidden">
+      <div class="field"><label>Nombre *</label><input type="text" id="reg-name" placeholder="Tu nombre" autocomplete="off"></div>
+      <div class="field"><label>Edad *</label><input type="number" id="reg-age" placeholder="25" min="10" max="120" autocomplete="off"></div>
+      <div class="field"><label>Correo electrónico *</label><input type="email" id="reg-email" placeholder="correo@ejemplo.com" autocomplete="email"></div>
+      <div class="field"><label>Contraseña *</label><input type="password" id="reg-pass" placeholder="mínimo 6 caracteres" autocomplete="new-password"></div>
+      <div class="field"><label>Género (opcional)</label>
+        <select id="reg-gender">
+          <option value="">-- No especificar --</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+          <option value="NB">No binario</option>
+          <option value="O">Otro</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="doRegister()">CREAR CUENTA</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     MAIN APP SCREEN
+══════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <header class="app-header" id="app-header">
+    <div class="header-top">
+      <div>
+        <div class="app-logo">NEUROLINK CORE</div>
+        <div style="font-size:0.52rem;color:var(--text-dim);letter-spacing:2px;margin-top:2px;">PROTOCOL: OMS_HEALTH_VER_4.2</div>
+      </div>
+      <div class="header-user">
+        <div class="header-username" id="header-username">—</div>
+        <div class="header-streak" id="header-streak">🔥 0 días</div>
+        <div style="font-size:0.52rem;color:var(--text-dim);margin-top:2px;" id="header-limit">0/5 ejercicios hoy</div>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-item"><span class="hud-label">Rank</span><span class="hud-value" id="hud-rank">BRONCE</span></div>
+      <div class="hud-item"><span class="hud-label">XP Total</span><span class="hud-value" id="hud-xp">0000</span></div>
+      <div class="hud-item"><span class="hud-label">Nivel</span><span class="hud-value" id="hud-level">01</span></div>
+    </div>
+    <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar"></div></div>
+  </header>
+
+  <div class="daily-limit-banner" id="daily-limit-banner">
+    ⚠ LÍMITE DIARIO ALCANZADO — Regresa mañana para seguir entrenando. Descanso = recuperación.
+  </div>
+
+  <div class="rankup-banner" id="rankup-banner">
+    <span id="rankup-text">⬛ RANK UP ⬛</span>
+    <br>
+    <button class="share-btn" onclick="openShareModal()">◈ COMPARTIR LOGRO</button>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toast-main"></span>
+    <span class="toast-tip" id="toast-tip"></span>
+  </div>
+
+  <div class="daily-zone" id="daily-zone" role="button" tabindex="0" aria-label="Misión del día">
+    <span class="daily-badge">[ MISIÓN DEL DÍA · +25% XP ]</span>
+    <div class="daily-title" id="daily-title">Cargando misión...</div>
+    <div class="daily-desc" id="daily-desc">—</div>
+    <div class="daily-day" id="daily-day-label"></div>
+  </div>
+
+  <div class="section-hdr" id="ex-section-hdr">>> MÓDULOS DE ENTRENAMIENTO</div>
+  <div class="ex-grid" id="exercises-grid"></div>
+
+  <footer class="app-footer">
+    <div class="footer-creators">
+      <span>Creado por:</span>
+      <a href="https://www.instagram.com/jev_1108/" target="_blank" rel="noopener">
+        <span class="footer-ig-icon">📷</span>@jev_1108
+      </a>
+      <a href="https://www.instagram.com/francis__coach" target="_blank" rel="noopener">
+        <span class="footer-ig-icon">📷</span>@francis__coach
+      </a>
+    </div>
+    <div>&copy; 2024 NEUROLINK CORE · OMS_HEALTH_VER_4.2 · UNLICENSED_COPY</div>
+  </footer>
+
+  <button id="logout-btn" onclick="doLogout()" style="position:fixed;bottom:12px;right:12px;background:#0a0a0f;border:1px solid #1a2f35;color:#2a4a50;font-family:var(--font-mono);font-size:0.55rem;padding:6px 10px;cursor:pointer;z-index:300;letter-spacing:1px;">LOGOUT</button>
+</div>
+
+<!-- ══════════════════════════
+     EXERCISE DETAIL SCREEN
+══════════════════════════ -->
+<div id="screen-exercise" class="screen">
+  <div class="ex-header">
+    <button class="back-btn" onclick="goBack()">◂ VOLVER</button>
+    <div>
+      <div class="ex-detail-title" id="ex-detail-title">EJERCICIO</div>
+      <div class="ex-detail-type" id="ex-detail-type">TIPO</div>
+    </div>
+  </div>
+  <div class="ex-content" id="ex-content"></div>
+</div>
+
+<!-- ══════════════════════════
+     SHARE MODAL
+══════════════════════════ -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeShareModal()">✕</button>
+    <div class="modal-title">COMPARTIR LOGRO</div>
+    <canvas id="share-canvas" class="share-canvas" width="400" height="400"></canvas>
+    <div class="share-links">
+      <a class="share-link" id="share-wa" href="#" target="_blank">💬 WhatsApp</a>
+      <a class="share-link" id="share-fb" href="#" target="_blank">📘 Facebook</a>
+      <a class="share-link" id="share-tw" href="#" target="_blank">🐦 X / Twitter</a>
+      <a class="share-link" id="share-ig" href="#" onclick="alert('Descarga la imagen y compártela en Instagram.')">📸 Instagram</a>
+    </div>
+    <button class="share-download" onclick="downloadShareImage()">⬇ DESCARGAR IMAGEN</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   NEUROLINK CORE v2 — JavaScript
+═══════════════════════════════════════════════════════ */
+'use strict';
+
+// ── AUDIO ENGINE (Web Audio API) ──────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+function playTone(freq, type, duration, vol=0.3, startDelay=0) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime + startDelay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startDelay + duration);
+    osc.start(ctx.currentTime + startDelay);
+    osc.stop(ctx.currentTime + startDelay + duration);
+  } catch(e){}
+}
+function soundStart() {
+  playTone(440, 'square', 0.12, 0.2);
+  playTone(660, 'square', 0.12, 0.2, 0.15);
+  playTone(880, 'square', 0.18, 0.25, 0.3);
+}
+function soundWarning() {
+  playTone(330, 'sawtooth', 0.08, 0.2);
+  playTone(330, 'sawtooth', 0.08, 0.2, 0.15);
+  playTone(330, 'sawtooth', 0.08, 0.2, 0.3);
+  playTone(330, 'sawtooth', 0.08, 0.2, 0.45);
+  playTone(330, 'sawtooth', 0.08, 0.2, 0.6);
+}
+function soundFinish() {
+  [523,659,784,1047].forEach((f,i) => playTone(f,'square',0.25,0.3,i*0.1));
+}
+function soundRankUp() {
+  [262,330,392,523,659,784,1047].forEach((f,i)=>playTone(f,'square',0.3,0.35,i*0.08));
+}
+function soundXP() {
+  playTone(880,'sine',0.1,0.2);
+  playTone(1100,'sine',0.08,0.15,0.1);
+}
+
+// ── CONSTANTS ─────────────────────────────────────────
+const MAX_DAILY_EXERCISES = 5;
+const STREAK_BONUS_DAYS   = 7;
+const STREAK_BONUS_PCT    = 0.15;
+const XP_PER_LEVEL        = 500;
+const MAX_XP_DISPLAY      = 9999;
+
+const RANKS = [
+  { min:5000, name:'NEURO-TITAN',  color:'#FF6B35', cls:'rank-titan'  },
+  { min:3000, name:'NEURO-ORO',    color:'#FFD700', cls:'rank-gold'   },
+  { min:1500, name:'NEURO-PLATA',  color:'#C0C0C0', cls:'rank-silver' },
+  { min:500,  name:'NEURO-BRONCE', color:'#CD7F32', cls:'rank-bronze' },
+  { min:0,    name:'NEURO-INIT',   color:'#00E5FF', cls:''            },
+];
+
+// OMS-based exercises — 7 days rotation
+const EXERCISE_POOL = [
+  // Day 0 — Aeróbico + Óseo
+  [
+    {id:'jog',    name:'Marcha Activa',        type:'AERÓBICO (OMS)',  xp:100, minXP:0,   hasCam:false, hasTimer:true,  timerSec:120, reps:null,
+      technique:'Caminar a paso rápido es la actividad aeróbica más accesible según la OMS. Activa el sistema cardiovascular sin impacto excesivo en las articulaciones.',
+      steps:['Mantén la espalda erguida y el core activado.','Balanceo natural de brazos opuesto al pie que avanza.','Pasos medianos, apoyando talón-planta-punta.','Respiración rítmica: inhala 3 pasos, exhala 3 pasos.','Velocidad objetivo: podrías hablar pero con esfuerzo.']},
+    {id:'jump',   name:'Salto Sináptico',       type:'ÓSEO (OMS)',     xp:110, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:20,
+      technique:'Los saltos son uno de los mejores estímulos para la densidad ósea. La OMS los recomienda en personas de todas las edades como actividad osteogénica.',
+      steps:['De pie con pies al ancho de hombros.','Flexiona levemente las rodillas en el impulso.','Salta verticalmente con extensión completa.','Aterriza con rodillas semiflexionadas para absorber el impacto.','Mantén el torso estable durante todo el movimiento.']},
+    {id:'squat',  name:'Sentadilla Profunda',   type:'FUERZA',         xp:130, minXP:0,   hasCam:true,  hasTimer:false, timerSec:0,   reps:15,
+      technique:'La sentadilla es un movimiento funcional básico que activa cuádriceps, glúteos, isquiotibiales y core simultáneamente. Es uno de los ejercicios de fuerza más completos.',
+      steps:['Pies al ancho de hombros o ligeramente más abiertos.','Punta de pies con ligera apertura hacia afuera (15-30°).','Desciende como si fueras a sentarte en una silla.','Mantén el pecho erguido, rodillas alineadas con punta de pies.','Desciende hasta que los muslos queden paralelos al suelo o más abajo.','Empuja desde los talones para subir.']},
+    {id:'push',   name:'Flexiones de Empuje',   type:'FUERZA',         xp:140, minXP:500, hasCam:true,  hasTimer:false, timerSec:0,   reps:12,
+      technique:'Las flexiones son el ejercicio de empuje horizontal por excelencia. Desarrollan pectoral, tríceps, deltoides anterior y estabilizan el core.',
+      steps:['Posición de plancha, manos al ancho de hombros o ligeramente más.','Cuerpo en línea recta desde la cabeza hasta los talones.','Desciende controlando: codos a 45° del cuerpo.','Pecho casi toca el suelo antes de empujar.','Extensión completa de codos al subir.','Mantén el core firme durante todo el movimiento.']},
+    {id:'plank',  name:'Plancha Isométrica',    type:'CORE',           xp:120, minXP:0,   hasCam:false, hasTimer:true,  timerSec:45,  reps:null,
+      technique:'La plancha es el ejercicio isométrico de core más efectivo. Activa transverso del abdomen, multífidos lumbares y estabilizadores de hombro.',
+      steps:['Apoya antebrazos y punta de pies en el suelo.','Cuerpo en línea recta: no eleves ni hundas la cadera.','Activa el abdomen como si fueras a recibir un golpe.','Respiración normal y continua.','Mirada hacia el suelo, cuello neutral.']},
+  ],
+  // Day 1 — Fuerza + Movilidad
+  [
+    {id:'lunge',  name:'Zancadas Alternas',     type:'FUERZA',         xp:130, minXP:0,   hasCam:true,  hasTimer:false, timerSec:0,   reps:12,
+      technique:'Las zancadas trabajan cada pierna de forma independiente, mejorando el equilibrio y la simetría muscular. Activan glúteos, cuádriceps e isquiotibiales.',
+      steps:['De pie con pies juntos, espalda recta.','Da un paso adelante de tamaño generoso.','Desciende hasta que la rodilla trasera casi toque el suelo.','Rodilla delantera no debe sobrepasar la punta del pie.','Empuja desde el talón delantero para volver.','Alterna piernas en cada repetición.']},
+    {id:'glute',  name:'Puente de Glúteos',     type:'FUERZA',         xp:110, minXP:0,   hasCam:true,  hasTimer:false, timerSec:0,   reps:15,
+      technique:'El puente de glúteos activa los glúteos, isquiotibiales y estabilizadores de cadera. Esencial para compensar el sedentarismo.',
+      steps:['Acostado boca arriba, rodillas flexionadas 90°, pies planos.','Pies a la altura de las caderas.','Eleva las caderas apretando glúteos hasta línea hombro-cadera-rodilla.','Sostén 2 segundos arriba apretando glúteos.','Desciende controlado sin dejar caer.']},
+    {id:'mtn',    name:'Escalador de Montaña',  type:'CARDIO',         xp:150, minXP:0,   hasCam:false, hasTimer:true,  timerSec:40,  reps:null,
+      technique:'El escalador de montaña es un ejercicio de alta intensidad que combina fuerza de core, coordinación y demanda cardiovascular.',
+      steps:['Posición de plancha alta con brazos extendidos.','Lleva alternadamente las rodillas hacia el pecho lo más rápido posible.','Mantén las caderas alineadas: no las eleves.','Respira con ritmo constante.','Mantén el core firme durante todo el movimiento.']},
+    {id:'calf',   name:'Elevaciones de Talón',  type:'ÓSEO (OMS)',     xp:100, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:20,
+      technique:'Las elevaciones de talón estimulan la densidad ósea del tobillo y tibia. La OMS las recomienda especialmente para adultos mayores como prevención de osteoporosis.',
+      steps:['De pie, pies paralelos al ancho de caderas.','Puedes apoyarte en una pared para el equilibrio.','Eleva los talones lentamente (2-3 seg).','Sostén 1 segundo arriba apretando pantorrillas.','Desciende controlado (3 seg).']},
+    {id:'stretch',name:'Movilidad Articular',   type:'FLEXIBILIDAD',   xp:90,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:60,  reps:null,
+      technique:'La movilidad articular reduce el riesgo de lesiones y mejora el rango de movimiento. La OMS la incluye como componente esencial del ejercicio para mayores.',
+      steps:['Realiza círculos lentos con los tobillos (10 cada lado).','Círculos de rodillas (10 cada lado).','Rotación de cadera: manos en cadera, círculos amplios (10 cada lado).','Círculos de hombros: hacia adelante y hacia atrás (10 cada uno).','Rotación de cuello: lenta y controlada (5 cada lado).']},
+  ],
+  // Day 2 — Intervalos + Equilibrio
+  [
+    {id:'burpee', name:'Burpee Reboot',         type:'FULL BODY',      xp:200, minXP:1000, hasCam:false, hasTimer:false, timerSec:0,   reps:10,
+      technique:'El burpee es uno de los ejercicios más completos. Combina empuje, salto y trabajo cardiovascular en un solo movimiento funcional.',
+      steps:['De pie, desciende con las manos al suelo.','Salta o camina los pies atrás a posición de plancha.','Realiza una flexión completa (opcional pero recomendado).','Salta o camina los pies hacia las manos.','Salta verticalmente con brazos extendidos.','Aterriza suavemente y repite.']},
+    {id:'hiit1',  name:'Sprint Dopamina',        type:'CARDIO (HIIT)',  xp:160, minXP:0,   hasCam:false, hasTimer:true,  timerSec:30,  reps:null,
+      technique:'El entrenamiento interválico de alta intensidad (HIIT) mejora la capacidad aeróbica y anaeróbica. La OMS 2020 respalda la actividad vigorosa como equivalente a doble tiempo moderado.',
+      steps:['Corre en el lugar lo más rápido posible.','Levanta las rodillas por encima de la cadera.','Balanceo activo de brazos.','Máxima intensidad los 30 segundos.','Descansa 30 segundos y repite 4-6 veces.']},
+    {id:'balance',name:'Equilibrio Unipodal',    type:'EQUILIBRIO',     xp:100, minXP:0,   hasCam:false, hasTimer:true,  timerSec:60,  reps:null,
+      technique:'El equilibrio sobre un pie activa los músculos estabilizadores del tobillo, rodilla y cadera. La OMS lo recomienda para adultos mayores para prevenir caídas.',
+      steps:['De pie, apoya una mano en la pared si necesitas.','Levanta un pie del suelo y sostén.','30 segundos cada pierna.','Progresión: cierra los ojos, mueve los brazos o gira la cabeza.','Mantén la mirada fija en un punto para ayudar al equilibrio.']},
+    {id:'tricep', name:'Fondos de Tríceps',      type:'FUERZA',         xp:130, minXP:500, hasCam:true,  hasTimer:false, timerSec:0,   reps:12,
+      technique:'Los fondos de tríceps son un ejercicio de empuje vertical que desarrolla tríceps, deltoides posterior y pectoral inferior. Se pueden hacer en una silla.',
+      steps:['Siéntate en el borde de una silla resistente.','Manos en el borde, dedos hacia adelante.','Desliza el cuerpo hacia adelante hasta que la cadera esté frente a la silla.','Flexiona los codos a 90° bajando el cuerpo.','Empuja extendiendo los codos para subir.']},
+    {id:'deadbug',name:'Dead Bug Core',          type:'CORE',           xp:120, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:10,
+      technique:'El Dead Bug es uno de los mejores ejercicios de core para activar el transverso del abdomen manteniendo la columna lumbar neutral.',
+      steps:['Acostado boca arriba, brazos extendidos hacia el techo.','Rodillas en 90° con pies en el aire.','Extiende simultáneamente el brazo derecho y la pierna izquierda.','Mantén la espalda baja pegada al suelo durante todo el movimiento.','Regresa al centro y repite con el lado opuesto.']},
+  ],
+  // Day 3 — Hombros + Cadenas
+  [
+    {id:'pike',   name:'Flexión en Pica',        type:'HOMBROS',        xp:140, minXP:500, hasCam:true,  hasTimer:false, timerSec:0,   reps:10,
+      technique:'La flexión en pica es la progresión del hombro a peso corporal. Carga el deltoides y trapecio de forma más intensa que la flexión normal.',
+      steps:['Posición de flexión con caderas elevadas formando una V invertida.','Manos al ancho de hombros, cuerpo formando una V.','Dobla los codos apuntando hacia afuera.','Baja la cabeza hacia el suelo entre las manos.','Empuja de regreso extendiendo los codos.']},
+    {id:'step',   name:'Step-up Articular',      type:'ÓSEO (OMS)',     xp:120, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:15,
+      technique:'El step-up estimula la densidad ósea de cadera, fémur y tibia. Funcional y de bajo impacto, recomendado por la OMS para todas las edades.',
+      steps:['Ubícate frente a un escalón o superficie elevada estable (15-30cm).','Sube con el pie derecho completamente.','Lleva el pie izquierdo a la misma altura.','Baja con el pie derecho controlado.','Alterna la pierna líder cada serie.']},
+    {id:'superwoman',name:'Superman/Superwoman', type:'ESPALDA BAJA',   xp:100, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:12,
+      technique:'El ejercicio Superman/Superwoman fortalece los extensores de la columna y los glúteos. Es fundamental para contrarrestar el sedentarismo y prevenir el dolor lumbar.',
+      steps:['Acostado boca abajo, brazos extendidos al frente.','Eleva simultáneamente brazo derecho y pierna izquierda.','Sostén 2 segundos arriba.','Baja controlado y alterna lados.','Mantén el cuello en posición neutral mirando hacia abajo.']},
+    {id:'wall',   name:'Sentadilla en Pared',    type:'ISOMÉTRICO',     xp:130, minXP:0,   hasCam:false, hasTimer:true,  timerSec:45,  reps:null,
+      technique:'La sentadilla isométrica en pared mejora la resistencia muscular de cuádriceps y glúteos sin impacto articular. Ideal para rehabilitación y tonificación.',
+      steps:['Apoya la espalda completa contra la pared.','Camina los pies hacia adelante hasta tener 90° en rodillas.','Muslos paralelos al suelo.','Mantén la posición respirando normalmente.','Si sientes dolor en rodilla, sube ligeramente hasta sentirte cómodo.']},
+    {id:'breathing',name:'Respiración 4-7-8',    type:'RECUPERACIÓN',   xp:80,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:60,  reps:null,
+      technique:'La respiración controlada reduce el cortisol, mejora la recuperación y activa el sistema nervioso parasimpático. La OMS reconoce el bienestar mental como parte integral de la salud física.',
+      steps:['Siéntate cómodamente con la espalda recta.','Inhala por la nariz contando 4 segundos.','Retén el aire contando 7 segundos.','Exhala por la boca contando 8 segundos.','Repite 4-8 ciclos completos.']},
+  ],
+  // Day 4 — Cardio + Core
+  [
+    {id:'jj',     name:'Jumping Jacks',          type:'CARDIO (OMS)',   xp:110, minXP:0,   hasCam:false, hasTimer:true,  timerSec:45,  reps:null,
+      technique:'Los Jumping Jacks son ejercicio aeróbico de moderada intensidad, clasificados por la OMS como actividad que mejora la salud cardiovascular.',
+      steps:['De pie con pies juntos y brazos a los lados.','Salta abriendo pies a más del ancho de hombros.','Simultáneamente eleva los brazos por encima de la cabeza.','Salta de regreso a posición inicial.','Mantén un ritmo constante y controlado.']},
+    {id:'crunch', name:'Crunch Funcional',        type:'CORE',           xp:100, minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:15,
+      technique:'El crunch funcional activa el recto abdominal con mínimo riesgo lumbar cuando se ejecuta correctamente. Es preferible a la abdominales con tirón de cuello.',
+      steps:['Acostado, rodillas flexionadas, pies planos en el suelo.','Manos detrás de la cabeza sin jalar el cuello.','Activa el abdomen y eleva los hombros del suelo.','El movimiento es corto: solo separa los hombros del suelo.','Baja controlado sin dejar caer la cabeza.']},
+    {id:'hipcirc',name:'Círculos de Cadera',      type:'MOVILIDAD',      xp:90,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:40,  reps:null,
+      technique:'La movilidad de cadera es fundamental para la salud lumbar y funcional. La OMS destaca la movilidad como componente esencial del ejercicio en adultos mayores.',
+      steps:['De pie con pies al ancho de hombros, manos en cadera.','Realiza círculos amplios con la cadera en sentido horario.','10 repeticiones en cada dirección.','Movimiento lento y controlado.','Progresión: aumenta la amplitud gradualmente.']},
+    {id:'rev_lunge',name:'Zancada Reversa',       type:'FUERZA',         xp:130, minXP:0,   hasCam:true,  hasTimer:false, timerSec:0,   reps:12,
+      technique:'La zancada reversa reduce el estrés en la rodilla delantera comparado con la zancada frontal. Activa más los glúteos e isquiotibiales.',
+      steps:['De pie, pies juntos.','Da un paso hacia atrás con el pie derecho.','Baja la rodilla derecha hacia el suelo.','Rodilla izquierda se alinea con el tobillo izquierdo.','Empuja con el pie izquierdo para volver.','Alterna piernas.']},
+    {id:'invrow', name:'Remo Invertido',           type:'ESPALDA (OMS)', xp:150, minXP:500, hasCam:true,  hasTimer:false, timerSec:0,   reps:10,
+      technique:'El remo invertido fortalece dorsales, romboides y bíceps. La OMS recomienda ejercicios de la cadena posterior para contrarrestar el sedentarismo y la postura de escritorio.',
+      steps:['Necesitas una mesa resistente o barra baja.','Acuéstate debajo y agarra el borde con ambas manos.','Cuerpo recto, talones en el suelo.','Jala el pecho hacia la mesa/barra retrayendo las escápulas.','Baja controlado con extensión completa de codos.']},
+  ],
+  // Day 5 — Fuerza Total
+  [
+    {id:'pushup_wide',name:'Flexión Apertura',    type:'PECTORAL',       xp:140, minXP:500, hasCam:true,  hasTimer:false, timerSec:0,   reps:12,
+      technique:'La flexión con manos abiertas aumenta la activación del pectoral mayor. Variante recomendada para desarrollar la amplitud del pecho.',
+      steps:['Manos más anchas que los hombros (1.5x).','Cuerpo en línea recta.','Desciende hasta que el pecho toque el suelo.','Codos forman un ángulo mayor a 90° al bajar.','Empuja explosivamente para subir.']},
+    {id:'nordic',   name:'Curl Nórdico Adaptado', type:'ISQUIOTIBIALES', xp:160, minXP:1000,hasCam:false, hasTimer:false, timerSec:0,   reps:8,
+      technique:'El curl nórdico es uno de los mejores ejercicios para isquiotibiales. Previene lesiones de ligamento cruzado anterior (LCA). Requiere fijar los pies.',
+      steps:['Arrodíllate con pies fijos bajo algo pesado (sofá, cama).','Cuerpo erguido de rodillas a cabeza.','Baja el cuerpo hacia adelante lentamente usando los isquiotibiales.','Cuando no puedas más, apoya las manos para el final del descenso.','Empuja con las manos para volver a la posición inicial.']},
+    {id:'side_plank',name:'Plancha Lateral',      type:'CORE LATERAL',   xp:120, minXP:0,   hasCam:false, hasTimer:true,  timerSec:30,  reps:null,
+      technique:'La plancha lateral activa el cuadrado lumbar y el glúteo medio, músculos clave para la estabilidad lateral de la columna y la prevención de dolor lumbar.',
+      steps:['Apoya en el antebrazo lateral y el borde del pie.','Cuerpo en línea recta lateral.','Cadera elevada: no la dejes caer.','Brazo libre extendido hacia arriba.','30 segundos cada lado.']},
+    {id:'squat_jump',name:'Sentadilla Explosiva', type:'POTENCIA',       xp:170, minXP:1000,hasCam:true,  hasTimer:false, timerSec:0,   reps:10,
+      technique:'La sentadilla con salto desarrolla potencia en los miembros inferiores y es un poderoso estímulo osteogénico. La OMS clasifica este tipo de ejercicio como actividad vigorosa.',
+      steps:['Sentadilla hasta muslos paralelos.','Desde el punto más bajo, salta explosivamente.','Extiende completamente caderas, rodillas y tobillos en el salto.','Aterriza suavemente con rodillas flexionadas.','Absorbe el impacto y transiciona directo a la siguiente repetición.']},
+    {id:'rotation',  name:'Rotación de Torso',    type:'MOVILIDAD',      xp:90,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:40,  reps:null,
+      technique:'La rotación torácica es uno de los movimientos más limitados en personas sedentarias. Mejora la postura y reduce el riesgo de lesión lumbar.',
+      steps:['Sentado o de pie, brazos cruzados en el pecho.','Rota el torso hacia la derecha lo máximo posible.','Sostén 2 segundos y regresa al centro.','Rota hacia la izquierda.','Movimiento lento y controlado, respirando en cada rotación.']},
+  ],
+  // Day 6 — Recuperación activa
+  [
+    {id:'yoga1',    name:'Postura del Niño',       type:'RECUPERACIÓN',   xp:80,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:60,  reps:null,
+      technique:'La postura del niño estira la espalda baja, caderas y tobillos. La OMS reconoce el yoga y el estiramiento como actividades de flexibilidad beneficiosas para la salud.',
+      steps:['Arrodíllate con los pies juntos.','Siéntate sobre los talones.','Extiende los brazos al frente y baja el torso.','Frente cerca del suelo.','Respira profundo expandiendo la espalda con cada inhalación.']},
+    {id:'cat_cow',  name:'Gato-Vaca Espinal',      type:'MOVILIDAD',      xp:90,  minXP:0,   hasCam:false, hasTimer:false, timerSec:0,   reps:15,
+      technique:'El movimiento gato-vaca mejora la movilidad de toda la columna vertebral y activa los músculos estabilizadores profundos. Ideal como calentamiento o recuperación.',
+      steps:['En cuatro apoyos: manos bajo hombros, rodillas bajo caderas.','VACA: inhala arqueando la espalda, pecho y cadera al cielo.','GATO: exhala redondeando la espalda, ombligo hacia arriba.','Movimiento fluido y lento.','Sincroniza completamente con la respiración.']},
+    {id:'legs_wall',name:'Piernas en la Pared',    type:'RECUPERACIÓN',   xp:80,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:120, reps:null,
+      technique:'Elevar las piernas contra la pared mejora el retorno venoso, reduce la inflamación en piernas y promueve la recuperación activa post-entrenamiento.',
+      steps:['Acuéstate junto a la pared.','Eleva las piernas apoyándolas en la pared, formando 90°.','Glúteos lo más cerca posible de la pared.','Brazos relajados a los lados.','Cierra los ojos y respira profundo.']},
+    {id:'wrist',    name:'Movilidad de Muñecas',   type:'PREVENTIVO',     xp:70,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:40,  reps:null,
+      technique:'La movilidad de muñecas previene el síndrome del túnel carpiano y las lesiones por uso repetitivo. Esencial para quienes trabajan con computador.',
+      steps:['Extiende los brazos frente a ti.','Realiza círculos lentos con las muñecas (10 en cada dirección).','Junta las palmas y presiona suavemente.','Dedos entrelazados, revierte las palmas hacia afuera.','Mantén cada estiramiento 15-20 segundos.']},
+    {id:'walk_active',name:'Caminata de Cierre',   type:'AERÓBICO (OMS)', xp:90,  minXP:0,   hasCam:false, hasTimer:true,  timerSec:300, reps:null,
+      technique:'La OMS recomienda terminar el entrenamiento con actividad aeróbica de baja intensidad para facilitar la recuperación cardiovascular y metabólica.',
+      steps:['Camina a ritmo tranquilo.','Respira profundo y de forma rítmica.','Permite que el ritmo cardíaco descienda gradualmente.','Puedes hacer en casa: de cuarto en cuarto.','Reflexiona sobre lo que lograste hoy.']},
+  ],
+];
+
+// Motivational push notification messages
+const MOTIVATIONAL = [
+  '🔥 Tu racha no se rompe sola. ¡Actívate!',
+  '⚡ Tu hardware necesita mantenimiento. 5 min son suficientes.',
+  '🧠 Cada movimiento activa tu cerebro. ¡Ábrelo!',
+  '💪 No entrenes por cómo te ves. Entrena por cómo te sientes.',
+  '🏃 La OMS dice: 150 min/semana. ¿Ya tienes los tuyos?',
+  '🌟 Tu versión futura te lo agradecerá. ¡Empieza ahora!',
+  '⚙️ Sistema detectando inactividad. Requiere acción inmediata.',
+];
+
+// ── STATE ─────────────────────────────────────────────
+let currentUser = null;
+let timerInterval = null;
+let cameraStream = null;
+let poseDetectInterval = null;
+let currentExercise = null;
+let aiRepCount = 0;
+let lastY = null;
+let repPhase = 'up';
+let toastTimer = null;
+let rankBannerTimer = null;
+
+// ── STORAGE HELPERS ───────────────────────────────────
+function saveUsers(users) { localStorage.setItem('nl_users', JSON.stringify(users)); }
+function loadUsers() { return JSON.parse(localStorage.getItem('nl_users') || '{}'); }
+function saveCurrentUser(u) { localStorage.setItem('nl_current', u); }
+function loadCurrentUser() { return localStorage.getItem('nl_current'); }
+
+function getUserData(username) {
+  const users = loadUsers();
+  return users[username] || null;
+}
+function setUserData(username, data) {
+  const users = loadUsers();
+  users[username] = data;
+  saveUsers(users);
+}
+function createUserData(name, age, email, gender, password) {
+  return {
+    name, age, email, gender, password,
+    xp: 0,
+    level: 1,
+    rank: 'NEURO-INIT',
+    streak: 0,
+    lastTrainDate: null,
+    doneToday: [],
+    dailyCount: 0,
+    lastDailyDate: null,
+    dailyCooldown: false,
+    createdAt: Date.now(),
+  };
+}
+
+// ── TODAY'S DATE KEY ──────────────────────────────────
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function getDayIndex() {
+  const d = new Date();
+  return d.getDay(); // 0=Sun..6=Sat
+}
+
+// ── AUTH ──────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab !== 'login');
+  document.getElementById('auth-error').textContent = '';
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const age  = parseInt(document.getElementById('reg-age').value);
+  const email= document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const gender=document.getElementById('reg-gender').value;
+  const err  = document.getElementById('auth-error');
+  if (!name||!age||!email||!pass) { err.textContent='Completa todos los campos obligatorios.'; return; }
+  if (pass.length < 6) { err.textContent='La contraseña debe tener al menos 6 caracteres.'; return; }
+  if (!/\S+@\S+\.\S+/.test(email)) { err.textContent='Correo electrónico no válido.'; return; }
+  const users = loadUsers();
+  const username = name.toLowerCase().replace(/\s+/g,'_');
+  if (users[username]) { err.textContent='Ese nombre de usuario ya existe. Prueba con otro nombre.'; return; }
+  setUserData(username, createUserData(name, age, email, gender, pass));
+  saveCurrentUser(username);
+  currentUser = username;
+  err.textContent = '';
+  launchApp();
+}
+
+function doLogin() {
+  const username = document.getElementById('login-user').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('auth-error');
+  const user = getUserData(username);
+  if (!user) { err.textContent='Usuario no encontrado.'; return; }
+  if (user.password !== pass) { err.textContent='Contraseña incorrecta.'; return; }
+  saveCurrentUser(username);
+  currentUser = username;
+  err.textContent = '';
+  launchApp();
+}
+
+function doLogout() {
+  localStorage.removeItem('nl_current');
+  currentUser = null;
+  showScreen('screen-auth');
+}
+
+// ── STREAK ────────────────────────────────────────────
+function updateStreak(u, data) {
+  const today = todayKey();
+  if (data.lastTrainDate === today) return data;
+  const yesterday = (() => {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  })();
+  if (data.lastTrainDate === yesterday) {
+    data.streak++;
+  } else if (data.lastTrainDate !== today) {
+    data.streak = 1;
+  }
+  data.lastTrainDate = today;
+  return data;
+}
+
+function streakBonus(data) {
+  return data.streak >= STREAK_BONUS_DAYS ? STREAK_BONUS_PCT : 0;
+}
+
+// ── RESET DAILY IF NEW DAY ────────────────────────────
+function checkDailyReset(data) {
+  const today = todayKey();
+  if (data.lastDailyDate !== today) {
+    data.doneToday = [];
+    data.dailyCount = 0;
+    data.dailyCooldown = false;
+    data.lastDailyDate = today;
+  }
+  return data;
+}
+
+// ── RANKS ─────────────────────────────────────────────
+function getRank(xp) {
+  for (let r of RANKS) { if (xp >= r.min) return r; }
+  return RANKS[RANKS.length-1];
+}
+function getLevel(xp) { return Math.floor(xp / XP_PER_LEVEL) + 1; }
+
+// ── LAUNCH APP ────────────────────────────────────────
+function launchApp() {
+  let data = getUserData(currentUser);
+  data = checkDailyReset(data);
+  setUserData(currentUser, data);
+  showScreen('screen-app');
+  renderApp();
+  scheduleNotifications();
+}
+
+// ── RENDER APP ────────────────────────────────────────
+function renderApp() {
+  let data = getUserData(currentUser);
+  data = checkDailyReset(data);
+
+  const rank = getRank(data.xp);
+  const level = getLevel(data.xp);
+  const bonus = streakBonus(data);
+  const limitReached = data.dailyCount >= MAX_DAILY_EXERCISES;
+
+  // Header
+  document.getElementById('header-username').textContent = data.name.toUpperCase();
+  const streakEl = document.getElementById('header-streak');
+  streakEl.textContent = `🔥 ${data.streak} día${data.streak !== 1 ? 's' : ''} de racha`;
+  streakEl.className = 'header-streak' + (bonus > 0 ? ' bonus' : '');
+  if (bonus > 0) streakEl.textContent += ' · +15% XP BONUS';
+  document.getElementById('header-limit').textContent = `${data.dailyCount}/${MAX_DAILY_EXERCISES} ejercicios hoy`;
+
+  // HUD
+  document.getElementById('hud-rank').textContent = rank.name;
+  document.getElementById('hud-rank').style.color = rank.color;
+  document.getElementById('hud-xp').textContent = String(Math.min(data.xp, MAX_XP_DISPLAY)).padStart(4,'0');
+  document.getElementById('hud-level').textContent = String(level).padStart(2,'0');
+
+  // XP bar (progress within current level)
+  const xpInLevel = data.xp % XP_PER_LEVEL;
+  const pct = Math.min(100, Math.round((xpInLevel / XP_PER_LEVEL) * 100));
+  const barEl = document.getElementById('xp-bar');
+  barEl.style.width = pct + '%';
+  barEl.className = 'xp-bar' + (rank.name === 'NEURO-ORO' || rank.name === 'NEURO-TITAN' ? ' gold' : '');
+
+  // Header class
+  const hdr = document.getElementById('app-header');
+  hdr.className = 'app-header ' + rank.cls;
+
+  // Daily limit banner
+  document.getElementById('daily-limit-banner').style.display = limitReached ? 'block' : 'none';
+
+  // Daily mission
+  const dayIdx = getDayIndex();
+  const todayExercises = EXERCISE_POOL[dayIdx];
+  const dailyEx = todayExercises[0];
+  document.getElementById('daily-title').textContent = dailyEx.name;
+  document.getElementById('daily-desc').textContent = dailyEx.technique.split('.')[0] + '.';
+  document.getElementById('daily-day-label').textContent = `DÍA ${dayIdx+1} DE 7 · ${todayKey()}`;
+  const dz = document.getElementById('daily-zone');
+  dz.className = 'daily-zone' + (data.dailyCooldown || limitReached ? ' cooldown' : '');
+
+  // Section header
+  document.getElementById('ex-section-hdr').textContent = `>> MÓDULOS DEL DÍA ${dayIdx+1}`;
+
+  // Grid
+  const grid = document.getElementById('exercises-grid');
+  grid.innerHTML = '';
+  todayExercises.forEach(ex => {
+    const locked = data.xp < ex.minXP;
+    const done   = data.doneToday.includes(ex.id);
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (locked ? ' locked' : '') + (done ? ' done-today' : '');
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex', locked || done ? '-1' : '0');
+
+    card.innerHTML = `<span class="card-type">${ex.type}</span><div class="card-name">${ex.name}</div><div class="card-xp">+${ex.xp} XP${bonus>0?' (+15%)':''}</div>${locked?`<div class="card-req">REQ: ${ex.minXP} XP</div>`:''}`;
+
+    if (!locked && !done && !limitReached) {
+      const handler = () => openExercise(ex);
+      card.addEventListener('click', handler);
+      card.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openExercise(ex); }});
+      addZoomEffect(card);
+    } else if (done) {
+      card.addEventListener('click', () => showToast('info','Ya completaste este ejercicio hoy. ¡Buen trabajo!',''));
+    } else if (locked) {
+      card.addEventListener('click', () => showToast('error',`ACCESO DENEGADO — Necesitas ${ex.minXP} XP`,`Tienes ${data.xp} XP. ¡Sigue entrenando!`));
+    }
+    grid.appendChild(card);
+  });
+
+  // Daily zone events
+  const newDz = document.getElementById('daily-zone');
+  newDz.onclick = null;
+  if (!data.dailyCooldown && !limitReached) {
+    newDz.onclick = () => { completeExercise(dailyEx, true); };
+    addZoomEffect(newDz);
+  }
+}
+
+// ── ZOOM EFFECT ───────────────────────────────────────
+function addZoomEffect(el) {
+  let touchTimer = null;
+  el.addEventListener('touchstart', () => {
+    touchTimer = setTimeout(() => el.classList.add('touch-zoom'), 800);
+  }, {passive:true});
+  el.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
+    el.classList.remove('touch-zoom');
+  }, {passive:true});
+  el.addEventListener('touchcancel', () => {
+    clearTimeout(touchTimer);
+    el.classList.remove('touch-zoom');
+  }, {passive:true});
+}
+
+// ── OPEN EXERCISE ─────────────────────────────────────
+function openExercise(ex) {
+  currentExercise = ex;
+  stopTimer();
+  stopCamera();
+  aiRepCount = 0; repPhase='up'; lastY=null;
+
+  document.getElementById('ex-detail-title').textContent = ex.name.toUpperCase();
+  document.getElementById('ex-detail-type').textContent = ex.type;
+
+  const content = document.getElementById('ex-content');
+  content.innerHTML = '';
+
+  // Technique
+  const techDiv = document.createElement('div');
+  techDiv.className = 'technique-block';
+  let stepsHTML = ex.steps.map(s=>`<li>${s}</li>`).join('');
+  techDiv.innerHTML = `<p class="technique-text">${ex.technique}</p><ul class="technique-steps">${stepsHTML}</ul>`;
+  content.appendChild(techDiv);
+
+  // Timer or Reps
+  if (ex.hasTimer) {
+    buildTimerBlock(content, ex);
+  } else if (ex.reps) {
+    buildRepBlock(content, ex);
+  }
+
+  // Camera AI
+  if (ex.hasCam) {
+    buildCameraBlock(content, ex);
+  }
+
+  // Complete button
+  const completeBtn = document.createElement('button');
+  completeBtn.className = 'complete-btn';
+  completeBtn.textContent = `✓ COMPLETAR · +${ex.xp} XP`;
+  completeBtn.onclick = () => { completeExercise(ex, false); goBack(); };
+  content.appendChild(completeBtn);
+
+  showScreen('screen-exercise');
+}
+
+// ── TIMER BLOCK ───────────────────────────────────────
+function buildTimerBlock(container, ex) {
+  const div = document.createElement('div');
+  div.className = 'timer-block';
+  div.innerHTML = `
+    <div class="timer-display" id="timer-display">${formatTime(ex.timerSec)}</div>
+    <div class="timer-label">DURACIÓN RECOMENDADA</div>
+    <div class="timer-sets" id="timer-sets"></div>
+    <div class="timer-btns">
+      <button class="timer-btn" id="timer-start-btn" onclick="startTimer(${ex.timerSec})">▶ INICIAR</button>
+      <button class="timer-btn danger-btn" onclick="stopTimer()">■ DETENER</button>
+    </div>`;
+  container.appendChild(div);
+}
+
+let timerRemaining = 0;
+function startTimer(sec) {
+  stopTimer();
+  soundStart();
+  timerRemaining = sec;
+  updateTimerDisplay(timerRemaining);
+  const btn = document.getElementById('timer-start-btn');
+  if(btn) btn.textContent = '⏸ PAUSAR';
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateTimerDisplay(timerRemaining);
+    if (timerRemaining === 5) soundWarning();
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      soundFinish();
+      const disp = document.getElementById('timer-display');
+      if(disp){ disp.textContent='¡LISTO!'; disp.className='timer-display'; }
+      if(btn){ btn.textContent='▶ REINICIAR'; }
+    }
+  }, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function updateTimerDisplay(sec) {
+  const el = document.getElementById('timer-display');
+  if (!el) return;
+  el.textContent = formatTime(sec);
+  el.className = 'timer-display' + (sec <= 5 ? ' danger' : sec <= 15 ? ' warning' : '');
+}
+function formatTime(sec) {
+  const m = Math.floor(sec/60), s = sec%60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ── REP BLOCK ─────────────────────────────────────────
+function buildRepBlock(container, ex) {
+  const div = document.createElement('div');
+  div.className = 'rep-block';
+  div.innerHTML = `
+    <div class="rep-display" id="rep-display">00</div>
+    <div class="rep-target">Meta: ${ex.reps} repeticiones</div>
+    <div class="rep-btns">
+      <button class="rep-btn" onclick="addRep()">+</button>
+      <button class="rep-btn" style="border-color:var(--danger);color:var(--danger);" onclick="resetReps()">↺</button>
+    </div>`;
+  container.appendChild(div);
+}
+let manualReps = 0;
+function addRep() {
+  manualReps++;
+  soundXP();
+  const el = document.getElementById('rep-display');
+  if(el) el.textContent = String(manualReps).padStart(2,'0');
+}
+function resetReps() {
+  manualReps = 0;
+  const el = document.getElementById('rep-display');
+  if(el) el.textContent = '00';
+}
+
+// ── CAMERA AI BLOCK ───────────────────────────────────
+function buildCameraBlock(container, ex) {
+  const div = document.createElement('div');
+  div.className = 'camera-block';
+  div.innerHTML = `
+    <p class="camera-desc">La IA analizará tu movimiento articular para contar repeticiones automáticamente. Activa tu cámara y realiza el ejercicio a una distancia de 1-2 metros. El conteo se basa en el movimiento de las articulaciones principales.</p>
+    <video id="camera-feed" autoplay playsinline muted></video>
+    <div class="camera-rep-count" id="ai-rep-count">AI: 00 REPS</div>
+    <div class="camera-status" id="camera-status">Cámara inactiva</div>
+    <button class="btn-camera" id="btn-start-cam" onclick="startCamera()">📷 ACTIVAR CÁMARA</button>
+    <button class="btn-camera" onclick="stopCamera()">✕ DETENER</button>`;
+  container.appendChild(div);
+}
+
+function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('camera-status').textContent = 'Tu navegador no soporta acceso a cámara.';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(stream => {
+      cameraStream = stream;
+      const vid = document.getElementById('camera-feed');
+      vid.srcObject = stream;
+      vid.style.display = 'block';
+      const btn = document.getElementById('btn-start-cam');
+      if(btn) btn.classList.add('active');
+      document.getElementById('camera-status').textContent = '🟢 Analizando movimiento...';
+      document.getElementById('ai-rep-count').style.display = 'block';
+      startPoseDetection();
+    })
+    .catch(err => {
+      document.getElementById('camera-status').textContent = 'Error: ' + (err.message || 'No se pudo acceder a la cámara. Verifica permisos.');
+    });
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  clearInterval(poseDetectInterval);
+  const vid = document.getElementById('camera-feed');
+  if(vid){ vid.style.display='none'; vid.srcObject=null; }
+  const st = document.getElementById('camera-status');
+  if(st) st.textContent = 'Cámara detenida.';
+}
+
+// Simple motion-based rep counter using canvas pixel analysis
+function startPoseDetection() {
+  const vid = document.getElementById('camera-feed');
+  const canvas = document.createElement('canvas');
+  canvas.width = 80; canvas.height = 60;
+  const ctx2d = canvas.getContext('2d');
+  let prevBrightness = null;
+  let movementHistory = [];
+  aiRepCount = 0; repPhase = 'down';
+
+  poseDetectInterval = setInterval(() => {
+    if (!vid || vid.readyState < 2) return;
+    try {
+      ctx2d.drawImage(vid, 0, 0, 80, 60);
+      const frame = ctx2d.getImageData(0, 0, 80, 60);
+      const data = frame.data;
+      // Calculate average brightness of lower half (legs/body movement)
+      let sum = 0, count = 0;
+      for (let i = data.length/2; i < data.length; i+=4) {
+        sum += (data[i] + data[i+1] + data[i+2]) / 3;
+        count++;
+      }
+      const brightness = sum / count;
+      movementHistory.push(brightness);
+      if (movementHistory.length > 8) movementHistory.shift();
+
+      if (movementHistory.length >= 6) {
+        const recent = movementHistory.slice(-3).reduce((a,b)=>a+b,0)/3;
+        const older  = movementHistory.slice(0,3).reduce((a,b)=>a+b,0)/3;
+        const delta  = Math.abs(recent - older);
+
+        if (delta > 3) {
+          if (repPhase === 'up' && recent < older) {
+            repPhase = 'down';
+          } else if (repPhase === 'down' && recent > older + 2) {
+            repPhase = 'up';
+            aiRepCount++;
+            soundXP();
+            const el = document.getElementById('ai-rep-count');
+            if(el) el.textContent = `AI: ${String(aiRepCount).padStart(2,'0')} REPS`;
+            // sync with manual counter
+            const repEl = document.getElementById('rep-display');
+            if(repEl) repEl.textContent = String(aiRepCount).padStart(2,'0');
+          }
+        }
+      }
+      prevBrightness = brightness;
+    } catch(e) {}
+  }, 150);
+}
+
+// ── COMPLETE EXERCISE ─────────────────────────────────
+function completeExercise(ex, isDaily) {
+  let data = getUserData(currentUser);
+  data = checkDailyReset(data);
+
+  if (data.dailyCount >= MAX_DAILY_EXERCISES) {
+    showToast('error','LÍMITE DIARIO ALCANZADO','Regresa mañana para seguir entrenando.');
+    return;
+  }
+  if (data.doneToday.includes(ex.id)) {
+    showToast('info','Ya completaste este ejercicio hoy.','');
+    return;
+  }
+
+  // Update streak
+  data = updateStreak(currentUser, data);
+
+  // Calculate XP
+  let xpGain = ex.xp;
+  if (isDaily) xpGain = Math.round(xpGain * 1.25);
+  const bonus = streakBonus(data);
+  if (bonus > 0) xpGain = Math.round(xpGain * (1 + bonus));
+
+  const prevRank = getRank(data.xp);
+  const prevLevel = getLevel(data.xp);
+
+  data.xp += xpGain;
+  data.doneToday.push(ex.id);
+  data.dailyCount++;
+  if (isDaily) data.dailyCooldown = true;
+
+  const newRank = getRank(data.xp);
+  const newLevel = getLevel(data.xp);
+
+  setUserData(currentUser, data);
+
+  // Rank up?
+  if (newRank.name !== prevRank.name) {
+    soundRankUp();
+    showRankUp(newRank);
+  } else {
+    soundXP();
+  }
+
+  // Level up?
+  if (newLevel > prevLevel) {
+    setTimeout(()=>showToast('success',`⬆ NIVEL ${newLevel} ALCANZADO!`,`+${xpGain} XP ganados. ¡Sigue así!`), 500);
+  } else {
+    showToast('success', isDaily ? `MISIÓN COMPLETADA — +${xpGain} XP` : `EJERCICIO COMPLETADO — +${xpGain} XP`, getTip());
+  }
+
+  renderApp();
+}
+
+function getTip() {
+  const tips = [
+    'Boost de oxígeno detectado en el hipocampo.',
+    'Cortisol reducido. Sistema en equilibrio.',
+    'Densidad ósea actualizada. Integridad al 100%.',
+    'Hardware optimizado. Lag mental eliminado.',
+    'Neurotransmisores estabilizados. Rendimiento +18%.',
+    'Endorfinas liberadas. Estado de ánimo mejorado.',
+    'La OMS confirma: cada movimiento cuenta.',
+  ];
+  return tips[Math.floor(Math.random() * tips.length)];
+}
+
+// ── RANK UP UI ────────────────────────────────────────
+function showRankUp(rank) {
+  const banner = document.getElementById('rankup-banner');
+  document.getElementById('rankup-text').textContent = `⬛ RANK UP: ${rank.name} ⬛`;
+  banner.style.borderColor = rank.color;
+  banner.style.color = rank.color;
+  banner.style.display = 'block';
+  clearTimeout(rankBannerTimer);
+  rankBannerTimer = setTimeout(() => { banner.style.display='none'; }, 8000);
+}
+
+// ── SHARE MODAL ───────────────────────────────────────
+function openShareModal() {
+  const data = getUserData(currentUser);
+  const rank = getRank(data.xp);
+  const level = getLevel(data.xp);
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 400; canvas.height = 400;
+
+  // Background
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, 400, 400);
+
+  // Glow border
+  ctx.shadowColor = rank.color;
+  ctx.shadowBlur = 20;
+  ctx.strokeStyle = rank.color;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(10, 10, 380, 380);
+  ctx.shadowBlur = 0;
+
+  // Corner squares
+  [[10,10],[370,10],[10,370],[370,370]].forEach(([x,y]) => {
+    ctx.fillStyle = rank.color;
+    ctx.fillRect(x-4, y-4, 12, 12);
+  });
+
+  // Title
+  ctx.fillStyle = rank.color;
+  ctx.font = 'bold 32px monospace';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = rank.color;
+  ctx.shadowBlur = 15;
+  ctx.fillText('NEUROLINK CORE', 200, 80);
+  ctx.shadowBlur = 0;
+
+  // Protocol line
+  ctx.fillStyle = '#334';
+  ctx.font = '11px monospace';
+  ctx.fillText('PROTOCOL: OMS_HEALTH_VER_4.2', 200, 108);
+
+  // Divider
+  ctx.strokeStyle = '#1a3a40';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(40, 125); ctx.lineTo(360, 125); ctx.stroke();
+
+  // Rank badge
+  ctx.font = 'bold 22px monospace';
+  ctx.fillStyle = rank.color;
+  ctx.shadowColor = rank.color;
+  ctx.shadowBlur = 10;
+  ctx.fillText('RANK: ' + rank.name, 200, 175);
+  ctx.shadowBlur = 0;
+
+  // Level + XP
+  ctx.font = 'bold 48px monospace';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('NIVEL ' + level, 200, 240);
+
+  ctx.font = '16px monospace';
+  ctx.fillStyle = '#5a8a90';
+  ctx.fillText(data.xp + ' XP ACUMULADOS', 200, 268);
+
+  // Name
+  ctx.font = 'bold 20px monospace';
+  ctx.fillStyle = '#a0c4c8';
+  ctx.fillText(data.name.toUpperCase(), 200, 310);
+
+  // Streak
+  if (data.streak > 0) {
+    ctx.font = '14px monospace';
+    ctx.fillStyle = '#FF8C00';
+    ctx.fillText('🔥 ' + data.streak + ' DÍAS DE RACHA', 200, 336);
+  }
+
+  // Footer
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#1a3a40';
+  ctx.fillText('@jev_1108  •  @francis__coach', 200, 378);
+
+  // Share links
+  const text = encodeURIComponent(`🏋️ Acabo de alcanzar ${rank.name} NIVEL ${level} en NEUROLINK CORE con ${data.xp} XP! 💪 #NeurolinkCore #Fitness #OMS`);
+  const url = encodeURIComponent(window.location.href);
+  document.getElementById('share-wa').href = `https://wa.me/?text=${text}%20${url}`;
+  document.getElementById('share-fb').href = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+  document.getElementById('share-tw').href = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+
+  document.getElementById('share-modal').classList.add('active');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('active');
+}
+
+function downloadShareImage() {
+  const canvas = document.getElementById('share-canvas');
+  const link = document.createElement('a');
+  link.download = 'neurolink-logro.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ── TOAST ─────────────────────────────────────────────
+function showToast(type, main, tip) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-main').textContent = main;
+  document.getElementById('toast-tip').textContent = tip || '';
+  el.className = 'toast ' + type;
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display='none'; }, 3800);
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goBack() {
+  stopTimer();
+  stopCamera();
+  manualReps = 0;
+  currentExercise = null;
+  showScreen('screen-app');
+  renderApp();
+}
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────
+function scheduleNotifications() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(perm => {
+    if (perm !== 'granted') return;
+    // Morning reminder at ~9am
+    const now = new Date();
+    const target = new Date();
+    target.setHours(9, 0, 0, 0);
+    if (target < now) target.setDate(target.getDate()+1);
+    const delay = target - now;
+    setTimeout(() => {
+      const msg = MOTIVATIONAL[Math.floor(Math.random()*MOTIVATIONAL.length)];
+      new Notification('NEUROLINK CORE', { body: msg, icon: '' });
+    }, delay);
+  });
+}
+
+// ── BOOT SEQUENCE ─────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Keyboard shortcut: Enter on auth inputs
+  ['login-user','login-pass'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  });
+  ['reg-name','reg-age','reg-email','reg-pass'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+  });
+
+  // Boot
+  setTimeout(() => {
+    document.getElementById('screen-loading').classList.remove('active');
+    const saved = loadCurrentUser();
+    if (saved && getUserData(saved)) {
+      currentUser = saved;
+      launchApp();
+    } else {
+      showScreen('screen-auth');
+    }
+  }, 2500);
+});
+</script>
+</body>
+</html>
